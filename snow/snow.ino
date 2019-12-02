@@ -1,17 +1,16 @@
 #include <FastLED.h>
 
-#define LED_PIN  10
+const uint8_t kMatrixWidth = 7; // The width of your grid
+const uint8_t kMatrixHeight = 10; // The height of your grid
+
+#define LED_PIN  10 // The pin on the arduino you're using for Data
 
 #define COLOR_ORDER RGB
 #define CHIPSET     WS2811
 
 #define BRIGHTNESS 64
 
-// Params for width and height
-const uint8_t kMatrixWidth = 7;
-const uint8_t kMatrixHeight = 10;
 #define UPDATES_PER_SECOND 200
-
 #define NUM_LEDS (kMatrixWidth * kMatrixHeight)
 CRGB leds[ NUM_LEDS ];
 #define LAST_VISIBLE_LED 69
@@ -39,17 +38,18 @@ uint8_t XY (uint8_t x, uint8_t y) {
   return j;
 }
 
+// This is the storage grid for the pixels. It gets modified through code, but this is the inital arrangement.
 int grid[kMatrixHeight][kMatrixWidth+4] = {
-  {0,  1,  0,  1,  0,  1,  0, 1, 0, 1, 0},
-  {1,  0,  1,  0,  1,  0,  1, 0, 1, 0, 1},
-  {0,  1,  0,  1,  0,  1,  0, 1, 0, 1, 0},
-  {1,  0,  1,  0,  1,  0,  1, 0, 1, 0, 1},
-  {0,  1,  0,  1,  0,  1,  0, 1, 0, 1, 0},
-  {1,  0,  1,  0,  1,  0,  1, 0, 1, 0, 1},
-  {0,  1,  0,  1,  0,  1,  0, 1, 0, 1, 0},
-  {1,  0,  1,  0,  1,  0,  1, 0, 1, 0, 1},
-  {0,  1,  0,  1,  0,  1,  0, 1, 0, 1, 0},
-  {1,  0,  1,  0,  1,  0,  1, 0, 1, 0, 1},
+  {0,1,0,1,0,1,0,1,0,1,0},
+  {1,0,1,0,1,0,1,0,1,0,1},
+  {0,1,0,1,0,1,0,1,0,1,0},
+  {1,0,1,0,1,0,1,0,1,0,1},
+  {0,1,0,1,0,1,0,1,0,1,0},
+  {1,0,1,0,1,0,1,0,1,0,1},
+  {0,1,0,1,0,1,0,1,0,1,0},
+  {1,0,1,0,1,0,1,0,1,0,1},
+  {0,1,0,1,0,1,0,1,0,1,0},
+  {1,0,1,0,1,0,1,0,1,0,1},
 };
 
 void setup() {
@@ -73,8 +73,9 @@ void loop()
 }
 
 void loadFrame() {
+  // this is triggered 5 times per second. it shifts everything down once row, potentially ads new snow at the top, and potentially pushes things to the left or right to simulate wind
   int newGrid[kMatrixHeight][kMatrixWidth+4] = {};
-
+  
   long randomWindDir = random(-100, 100);
 
   for (int i =0; i < kMatrixHeight; i++) {
@@ -98,12 +99,12 @@ void loadFrame() {
 
             int windOffset = 0;
             if (randomWindDir < -80) {
+              // if the random wind number is less than -80, then shift everything to the left
               windOffset = -1;
             } else if (randomWindDir > 80) {
+              // if the random wind number is more than +80 then shift everything to the right
               windOffset = +1;
             } 
-
-
 
             newGrid[i][j] = grid[i-1][j+windOffset];
           }
@@ -126,11 +127,11 @@ void displayFrame()
             CRGB color = 0x000000;
             int pixel = grid[i][j+2];
             if (pixel == 1) {
-              color = 0xFFFFFF;
+              color = 0xFFFFFF; // some snow is white
             } else if (pixel == 2) {
-              color = 0x009999;
+              color = 0x009999; // some snow is cyan
             } else if (pixel == 3) {
-              color = 0xFFFF00;
+              color = 0xFFFF00; // some snow is yellow. :)
             }
             if (count >= 50) {
               // I used a different strip for LEDs 50-69 and the R and G leds are switched. 
@@ -146,6 +147,7 @@ void displayFrame()
     }
 }
 
+// These functions help to fade the colors.
 CRGB fadeTowardColor( CRGB& cur, const CRGB& target, uint8_t amount)
 {
   nblendU8TowardU8( cur.red,   target.red,   amount);
